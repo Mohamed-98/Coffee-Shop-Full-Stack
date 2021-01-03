@@ -5,9 +5,9 @@ from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = 'mgado.us.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+API_AUDIENCE = 'shop'
 
 ## AuthError Exception
 '''
@@ -31,7 +31,22 @@ class AuthError(Exception):
     return the token part of the header
 '''
 def get_token_auth_header():
-   raise Exception('Not Implemented')
+    if "Authorization" in request.headers:
+        # get the header from the request
+        auth_header = request.headers["Authorization"]
+        # raise an AuthError if no header is present
+        if not auth_header:
+            raise AuthError('Authorization header is missing', 401)
+
+        if auth_header:
+            # split bearer and the token
+            bearer_token_array = auth_header.split(' ')
+
+            if bearer_token_array[0] and bearer_token_array[0].lower() \
+                    == "bearer" and bearer_token_array[1]:
+                #return the token part of the header
+                return bearer_token_array[1]
+   #raise Exception('Not Implemented')
 
 '''
 @TODO implement check_permissions(permission, payload) method
@@ -45,7 +60,16 @@ def get_token_auth_header():
     return true otherwise
 '''
 def check_permissions(permission, payload):
-    raise Exception('Not Implemented')
+    if 'permissions' not in payload:
+        abort(400)
+
+    if permission not in payload['permissions']:
+        raise AuthError({
+            'code': 'unauthorized',
+            'description': 'Permission Not found',
+        }, 401)
+    return True
+
 
 '''
 @TODO implement verify_decode_jwt(token) method
@@ -61,7 +85,55 @@ def check_permissions(permission, payload):
     !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
 '''
 def verify_decode_jwt(token):
-    raise Exception('Not Implemented')
+    # verify the token using Auth0 /.well-known/jwks.json
+    jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+    jwks = json.loads(jsonurl.read())
+
+    # Get the data in the header
+    unverified_header = jwt.get_unverified_header(token)
+
+    if 'kid' not in unverified_header:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization malformed'
+        }, 401)
+
+    rsa_key = {}
+
+    for key in jwks['keys']:
+        if key['kid'] == unverified_header['kid']:
+            rsa_key = {
+                'kty': key['kty'],
+                'kid': key['kid'],
+                'use': key['use'],
+                'n': key['n'],
+                'e': key['e']
+            }
+
+    if rsa_key:
+        try:
+           # Validate the token using the rsa_key
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=ALGORITHMS,
+                audience=API_AUDIENCE,
+                issuer=f'https://{AUTH0_DOMAIN}/'
+            )
+            return payload
+
+        except jwt.ExpiredSignatureError:
+            raise AuthError('Token Expired', 401)
+
+        except jwt.JWTClaimsError:
+            raise AuthError('Invalid Claims', 401)
+
+        except Exception:
+            raise AuthError('Invalid Header - Exception Found', 400)
+
+    raise AuthError('Invalid Header - Unable to decode jwt', 400)
+
+
 
 '''
 @TODO implement @requires_auth(permission) decorator method
@@ -73,6 +145,8 @@ def verify_decode_jwt(token):
     it should use the check_permissions method validate claims and check the requested permission
     return the decorator which passes the decoded payload to the decorated method
 '''
+
+
 def requires_auth(permission=''):
     def requires_auth_decorator(f):
         @wraps(f)
