@@ -30,23 +30,32 @@ class AuthError(Exception):
         it should raise an AuthError if the header is malformed
     return the token part of the header
 '''
+
+
 def get_token_auth_header():
-    if "Authorization" in request.headers:
-        # get the header from the request
-        auth_header = request.headers["Authorization"]
-        # raise an AuthError if no header is present
-        if not auth_header:
-            raise AuthError('Authorization header is missing', 401)
 
-        if auth_header:
-            # split bearer and the token
-            bearer_token_array = auth_header.split(' ')
+    auth_header = request.headers.get("Authorization", None)
 
-            if bearer_token_array[0] and bearer_token_array[0].lower() \
-                    == "bearer" and bearer_token_array[1]:
-                #return the token part of the header
-                return bearer_token_array[1]
-   #raise Exception('Not Implemented')
+    if not auth_header:
+        raise AuthError({"code": "authorization_header_missing",
+                         "description":
+                         "Authorization header is expected"}, 401)
+
+    header_parts = auth_header.split(' ')
+
+    if len(header_parts) != 2 or not header_parts:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization header must be in the format'
+            ' Bearer token'}, 401)
+
+    elif header_parts[0].lower() != 'bearer':
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization header must start with Bearer'}, 401)
+
+    return header_parts[1]
+
 
 '''
 @TODO implement check_permissions(permission, payload) method
@@ -59,6 +68,8 @@ def get_token_auth_header():
     it should raise an AuthError if the requested permission string is not in the payload permissions array
     return true otherwise
 '''
+
+
 def check_permissions(permission, payload):
     if 'permissions' not in payload:
         abort(400)
@@ -69,6 +80,7 @@ def check_permissions(permission, payload):
             'description': 'Permission Not found',
         }, 401)
     return True
+
 
 
 '''
@@ -84,14 +96,17 @@ def check_permissions(permission, payload):
 
     !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
 '''
+
+
 def verify_decode_jwt(token):
-    # verify the token using Auth0 /.well-known/jwks.json
+    # Get public key from Auth0
     jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
     jwks = json.loads(jsonurl.read())
 
     # Get the data in the header
     unverified_header = jwt.get_unverified_header(token)
 
+    # Auth0 token should have a key id
     if 'kid' not in unverified_header:
         raise AuthError({
             'code': 'invalid_header',
@@ -109,10 +124,12 @@ def verify_decode_jwt(token):
                 'n': key['n'],
                 'e': key['e']
             }
+            break
 
+    # verify the token
     if rsa_key:
         try:
-           # Validate the token using the rsa_key
+            # Validate the token using the rsa_key
             payload = jwt.decode(
                 token,
                 rsa_key,
@@ -123,15 +140,31 @@ def verify_decode_jwt(token):
             return payload
 
         except jwt.ExpiredSignatureError:
-            raise AuthError('Token Expired', 401)
+
+            raise AuthError({
+                'code': 'token_expired',
+                'description': 'Token expired.'
+            }, 401)
 
         except jwt.JWTClaimsError:
-            raise AuthError('Invalid Claims', 401)
+
+            raise AuthError({
+                'code': 'invalid_claims',
+                'description': 'Incorrect claims. Please, '
+                'check the audience and issuer.'
+            }, 401)
 
         except Exception:
-            raise AuthError('Invalid Header - Exception Found', 400)
 
-    raise AuthError('Invalid Header - Unable to decode jwt', 400)
+            raise AuthError({
+                'code': 'invalid_header',
+                'description': 'Unable to parse authentication token.'
+            }, 400)
+
+    raise AuthError({
+        'code': 'invalid_header',
+        'description': 'Unable to find the appropriate key.'
+    }, 400)
 
 
 
