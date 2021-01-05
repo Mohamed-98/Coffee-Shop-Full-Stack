@@ -79,23 +79,23 @@ def get_drink_detail(payload):
 
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def create_new_drink(payload):
-    data = request.get_json()
+def create_drink(payload):
+    req = request.get_json()
+
     try:
-        title = data.get('title', None)
-        recipe = data.get('recipe', None)
-        drink = Drink(
-            title=title,
-            recipe=recipe
-        )
+        req_recipe = req['recipe']
+        if isinstance(req_recipe, dict):
+            req_recipe = [req_recipe]
+
+        drink = Drink()
+        drink.title = req['title']
+        drink.recipe = json.dumps(req_recipe)  # convert object to a string
         drink.insert()
 
-        return jsonify({
-            'success': True,
-            'drinks': [drink.long()]
-        }), 200
-    except:
-        abort(422)
+    except BaseException:
+        abort(401)
+
+    return jsonify({'success': True, 'drinks': [drink.long()]})
 
 '''
 @TODO implement endpoint
