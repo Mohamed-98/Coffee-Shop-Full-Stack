@@ -49,7 +49,7 @@ flask run --reload
 The `--reload` flag will detect file changes and restart the server automatically.
 
 ## File directory tree structure
------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
 .
 ├── backend
 │   └── src
@@ -74,5 +74,5 @@ The `--reload` flag will detect file changes and restart the server automaticall
         │   └── icon
         ├── environments
         └── theme
-
+```
 23 directories
