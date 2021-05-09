@@ -48,3 +48,38 @@ flask run --reload
 
 The `--reload` flag will detect file changes and restart the server automatically.
 
+## File directory tree structure
+```
+.
+├── README.md
+├── requirements.txt
+├── src
+│   ├── BBEditCheckSyntaxTemp-api.pyc
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-38.pyc
+│   │   ├── __init__.cpython-39.pyc
+│   │   ├── api.cpython-38.pyc
+│   │   └── api.cpython-39.pyc
+│   ├── api.py
+│   ├── api.pyc
+│   ├── auth
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-38.pyc
+│   │   │   ├── __init__.cpython-39.pyc
+│   │   │   ├── auth.cpython-38.pyc
+│   │   │   └── auth.cpython-39.pyc
+│   │   └── auth.py
+│   └── database
+│       ├── __init__.py
+│       ├── __pycache__
+│       │   ├── __init__.cpython-38.pyc
+│       │   ├── __init__.cpython-39.pyc
+│       │   ├── models.cpython-38.pyc
+│       │   └── models.cpython-39.pyc
+│       ├── database.db
+│       └── models.py
+└── udacity-fsnd-udaspicelatte.postman_collection.json
+```
+6 directories, 24 files
