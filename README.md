@@ -20,3 +20,32 @@ The `./backend` directory contains a partially completed Flask server with a pre
 
 The `./frontend` directory contains a complete Ionic frontend to consume the data from the Flask server.
 [View the README.md within ./frontend for more details.](./frontend/README.md)
+
+## File directory tree structure
+```
+.
+├── backend
+│   └── src
+│       ├── __pycache__
+│       ├── auth
+│       │   └── __pycache__
+│       └── database
+│           └── __pycache__
+└── frontend
+    ├── e2e
+    │   └── src
+    └── src
+        ├── app
+        │   ├── pages
+        │   │   ├── drink-menu
+        │   │   │   ├── drink-form
+        │   │   │   └── drink-graphic
+        │   │   ├── tabs
+        │   │   └── user-page
+        │   └── services
+        ├── assets
+        │   └── icon
+        ├── environments
+        └── theme
+```
+23 directories
